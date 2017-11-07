@@ -1,15 +1,20 @@
 # json-feed
 Java utility to create a Vespa-feed in Json
 
-mvn install && java -jar target/vespafeed-1.0-SNAPSHOT-jar-with-dependencies.jar 1
+mvn install && java -jar target/vespafeed-1.0-SNAPSHOT-jar-with-dependencies.jar 1 > f.json
 
-java -jar vespa-http-client-jar-with-dependencies.jar --host localhost < f.json
+http://docs.vespa.ai/documentation/vespa-quick-start.html
 
-java -jar target/vespafeed-1.0-SNAPSHOT-jar-with-dependencies.jar 1 | java -jar vespa-http-client-jar-with-dependencies.jar --host localhost
+docker run --detach --name vespa --hostname vespa-container --privileged \
+  --volume /Users/myuser/github/kkraune/vespa-samples/json-feed:/json-feed --publish 8080:8080 vespaengine/vespa
 
-deploy prepare src/main/application && deploy activate
+docker exec -it vespa bash
 
+vespa-deploy prepare /json-feed/src/main/application && vespa-deploy activate
+  
+java -jar vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080 < f.json
 
-vespa-remove-index -force
+java -jar target/vespafeed-1.0-SNAPSHOT-jar-with-dependencies.jar 1 | \
+  java -jar vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080
 
 curl -X DELETE http://localhost:8080/document/v1/iddoc/iddoc/docid/0
