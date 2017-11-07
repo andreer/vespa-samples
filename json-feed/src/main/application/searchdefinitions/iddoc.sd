@@ -1,0 +1,12 @@
+search iddoc {
+    document iddoc {
+        field id type string {
+            indexing: summary | index
+        }
+    }
+
+    fieldset default {
+        fields: id
+    }
+
+}
