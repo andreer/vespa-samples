@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services version='1.0'>
+
+    <container id='default' version='1.0'>
+        <processing>
+            <chain id='default'>
+                <processor id='com.yahoo.demo.AnnotatingProcessor' bundle="demo">
+                    <config name="demo.demo">
+                        <demo>
+                            <item>
+                                <term>smurf</term>
+                            </item>
+                        </demo>
+                    </config>
+                </processor>
+                <processor id='com.yahoo.demo.DataProcessor' bundle="demo" />
+            </chain>
+            <renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="demo" />
+        </processing>
+
+        <handler id="com.yahoo.demo.DemoHandler" bundle="demo">
+            <binding>http://*/demo</binding>
+        </handler>
+
+        <component id="com.yahoo.demo.DemoComponent" bundle="demo"/>
+
+    </container>
+
+</services>
