@@ -1,0 +1,26 @@
+search iddoc {
+    document iddoc {
+        field id type string {
+            indexing: summary | index
+        }
+
+        field intArray type array<int> {
+            indexing: attribute | summary
+        }
+
+        field floatArray type array<float> {
+            indexing: attribute | summary
+        }
+    }
+
+    fieldset default {
+        fields: id
+    }
+
+    rank-profile myrank inherits default {
+
+        first-phase {
+            expression: dotProduct(floatArray,queryvector)
+        }
+    }
+}
