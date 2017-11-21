@@ -12,10 +12,10 @@ docker exec -it vespa bash
 
 vespa-deploy prepare /vespa-samples/dotp/src/main/application && vespa-deploy activate
 
-java -jar vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080 < f.json
+java -jar ../vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080 < f.json
 
 java -jar target/dotp-1.0-SNAPSHOT-jar-with-dependencies.jar 1 | \
-  java -jar vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080
+  java -jar ../vespa-http-client-jar-with-dependencies.jar --host localhost --port 8080
 
 curl -X DELETE http://localhost:8080/document/v1/iddoc/iddoc/docid/0
 

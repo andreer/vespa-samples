@@ -61,16 +61,21 @@ public class VespaFeed {
         weightedSet.put("item 2", 3);
         fields.put("weightedSet", weightedSet);
 
-        ArrayList<Map> tensor = new ArrayList<>();            // Tensor
-        Map<String, Object> cell = new HashMap<>();
-        Map<String, String> address = new HashMap<>();
-        address.put("x","0");
-        address.put("y","1");
-        address.put("z","2");
-        cell.put("address", address);
-        cell.put("value", 1.1);
-        tensor.add(cell);
-        fields.put("tensor", tensor);
+        Map<String, Object> tensor_attribute = new HashMap<>();            // Tensor
+        ArrayList<Object> cells = new ArrayList<>();
+        for(Integer yIndex=0; yIndex<2; yIndex++) {
+            for (Integer xIndex = 0; xIndex < 2; xIndex++) {
+                Map<String, Object> cell = new HashMap<>();
+                Map<String, Object> address = new HashMap<>();
+                address.put("x", xIndex.toString());
+                address.put("y", yIndex.toString());
+                cell.put("address", address);
+                cell.put("value", (xIndex+0.1)*(yIndex+0.2));
+                cells.add(cell);
+            }
+        }
+        tensor_attribute.put("cells",cells);
+        fields.put("tensor_attribute", tensor_attribute);
         */
 
         fields.put("id", id);

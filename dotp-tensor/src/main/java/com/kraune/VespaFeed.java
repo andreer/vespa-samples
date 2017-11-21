@@ -23,7 +23,6 @@ public class VespaFeed {
             feed.add(buildDocument(id));
         }
 
-
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, feed);
         } catch (IOException e) {
@@ -31,9 +30,6 @@ public class VespaFeed {
         }
     }
 
-    /*
-        http://wiki.fasterxml.com/JacksonInFiveMinutes
-     */
     static Map<String, Object> buildDocument(String id) {
         Map<String, Object> document = new HashMap<>();
         Map<String,Object> fields = new HashMap<>();
@@ -42,7 +38,6 @@ public class VespaFeed {
         fields.put("string", "myName");                           // Regular fields
         fields.put("integer", 42);
         fields.put("raw", "VW5rbm93biBhcnRpc3QgZnJvbSB0aGUgbW9vbg==");
-        */
 
         ArrayList<Integer> intArr = new ArrayList<>();          // Array of integers
         intArr.add(1);
@@ -54,7 +49,6 @@ public class VespaFeed {
         floatArr.add(1.2f);
         fields.put("floatArray", floatArr);
 
-        /*
         Map<String, String> nameStruct = new HashMap<>();        // Struct and Map
         nameStruct.put("first", "Joe");
         nameStruct.put("last", "Doe");
@@ -64,6 +58,7 @@ public class VespaFeed {
         weightedSet.put("item 1", 1);
         weightedSet.put("item 2", 3);
         fields.put("weightedSet", weightedSet);
+        */
 
         Map<String, Object> tensor_attribute = new HashMap<>();            // Tensor
         ArrayList<Object> cells = new ArrayList<>();
@@ -80,7 +75,6 @@ public class VespaFeed {
         }
         tensor_attribute.put("cells",cells);
         fields.put("tensor_attribute", tensor_attribute);
-        */
 
         fields.put("id", id);
         document.put("put", id);
