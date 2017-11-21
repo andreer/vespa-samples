@@ -4,7 +4,7 @@ Java utility to create a tensor Vespa-feed in Json
 mvn install && java -jar target/dotp-tensor-1.0-SNAPSHOT-jar-with-dependencies.jar 1 > f.json
 
 docker run --detach --name vespa --hostname vespa-container --privileged \
-  --volume /Users/kraune/github/kkraune/vespa-samples:/vespa-samples --publish 8080:8080 vespaengine/vespa
+  --volume /Users/myuser/github/kkraune/vespa-samples:/vespa-samples --publish 8080:8080 vespaengine/vespa
 
 docker exec -it vespa bash
 
