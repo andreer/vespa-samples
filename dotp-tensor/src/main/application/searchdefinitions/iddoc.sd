@@ -18,8 +18,8 @@ search iddoc {
 
         first-phase {
             #expression: sum(attribute(tensor_attribute))
-            expression: sum(query(thetensor))
-            #expression: 1
+            #expression: sum(query(query_tensor))
+            expression: sum(attribute(tensor_attribute)*query(query_tensor))
         }
     }
 }
