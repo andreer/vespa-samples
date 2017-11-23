@@ -1,0 +1,36 @@
+search iddoc {
+    document iddoc {
+        field id type string {
+            indexing: summary | index
+        }
+
+        field tensor_attribute type tensor(x[2],y{}) {
+            indexing: attribute | summary
+            attribute: tensor(x[2],y{})
+        }
+    }
+
+    fieldset default {
+        fields: id
+    }
+
+    constant tensor_constant {
+        file: constants/constant_tensor_file.json
+        type: tensor(x[2],y{})
+    }
+
+    rank-profile tensorrank inherits default {
+        first-phase {
+            #expression: sum(attribute(tensor_attribute))
+            #expression: sum(query(tensor_query))
+            #expression: sum(attribute(tensor_attribute)*query(tensor_query))
+            expression: sum(constant(tensor_constant))
+        }
+    }
+
+    rank-profile constant_tensor_rank inherits default {
+        first-phase {
+            expression: sum(constant(tensor_constant)*attribute(tensor_attribute)*query(tensor_query))
+        }
+    }
+}
