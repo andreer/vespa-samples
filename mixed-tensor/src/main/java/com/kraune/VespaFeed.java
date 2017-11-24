@@ -35,17 +35,17 @@ public class VespaFeed {
         Map<String,Object> fields = new HashMap<>();
         Map<String, Object> tensor_attribute = new HashMap<>();
         ArrayList<Object> cells = new ArrayList<>();
-        for(String yAdr : new String[]{"a", "b"}) {
-            for (Integer xIndex = 0; xIndex < 2; xIndex++) {
+        for (Integer xIndex = 0; xIndex < 2; xIndex++) {
+            for(String yAdr : new String[]{"a", "b"}) {
                 Map<String, Object> cell = new HashMap<>();
                 Map<String, Object> address = new HashMap<>();
                 address.put("x", xIndex.toString());
-                //if ( (yAdr.codePointAt(0) % 2) == 0 ) {
-                    address.put("y", yAdr);
-                //}
+                address.put("y", yAdr);
                 cell.put("address", address);
                 cell.put("value", (xIndex+0.1));
-                cells.add(cell);
+                if ( (xIndex % 2) == 0 ) {
+                    cells.add(cell);
+                }
             }
         }
         tensor_attribute.put("cells",cells);
