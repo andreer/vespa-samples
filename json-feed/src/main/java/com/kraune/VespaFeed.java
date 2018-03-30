@@ -18,14 +18,15 @@ public class VespaFeed {
             numDocs =  Integer.parseInt(arg);
         }
 
-        String[] groups = {"g0", "g1"};
-        for (String g : groups)
-        {
+        //String[] groups = {"g0", "g1"};
+        //for (String g : groups)
+        //{
             for(int i=0; i<numDocs; i++) {
-                String id = "id:iddoc:iddoc:g=" + g + ":" + i;
+                //String id = "id:iddoc:iddoc:g=" + g + ":" + i;
+                String id = "id:iddoc:iddoc::" + i;
                 feed.add(buildDocument(id));
             }
-        }
+        //}
 
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, feed);
