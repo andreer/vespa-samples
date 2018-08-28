@@ -11,13 +11,13 @@ public class Capacity {
         this.memory   = 0;
     }
 
-    Capacity(int cpu, int memory, int disksize){
+    Capacity(int cpu, int memory, int disksize) {
         this.cpu      = cpu;
         this.memory   = memory;
         this.disksize = disksize;
     }
 
-    void setCapacityFromString(String flavor){
+    void setCapacityFromString(String flavor) {
         switch (flavor){
             case "C-2B/24/500":    cpu = 24; memory = 24;  disksize = 500;  break;
             case "C-2E/64/480":    cpu = 48; memory = 64;  disksize = 480;  break;
@@ -31,7 +31,7 @@ public class Capacity {
         }
     }
 
-    boolean canFit(Capacity capacity){
+    boolean canFit(Capacity capacity) {
         if (this.cpu < capacity.cpu || this.memory < capacity.memory || this.disksize < capacity.disksize) {
             return false;
         }
@@ -42,7 +42,7 @@ public class Capacity {
         return (cpu > 0 && memory > 0 && disksize > 0);
     }
 
-    Capacity(String flavor){
+    Capacity(String flavor) {
         // C-2E/64/480, d-12-16-100
         if ("d".equals(flavor.substring(0, 1))){
             String [] dimensions = flavor.split("-");

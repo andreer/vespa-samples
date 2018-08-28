@@ -8,13 +8,16 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.IntSupplier;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class NodeRepo {
     private List<Node> virtualNodes;
     private List<Node> baseHosts;
 
-    private NodeRepo(String filename){
+    private NodeRepo(String filename) {
         virtualNodes = new ArrayList<Node>();
         baseHosts    = new ArrayList<Node>();
         try {
@@ -37,7 +40,13 @@ public class NodeRepo {
         }
     }
 
-    private void AssignVirtualNodeToBaseHost(Node virtualNode) throws OutOfCapacityException {
+    private void AssignNodesToBaseHosts(ToIntFunction<Node> optFunc) throws OutOfCapacityException {
+        for (Node node: virtualNodes) {
+            AssignVirtualNodeToBaseHost(node, optFunc);
+        }
+    }
+
+    private void AssignVirtualNodeToBaseHost(Node virtualNode, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
         List<Node> candidateBaseHosts = new ArrayList<Node>();
         for (Node baseHost : baseHosts){
             if (baseHost.getFreeCapacity().canFit(virtualNode.getMaxCapacity())){
@@ -51,7 +60,7 @@ public class NodeRepo {
 
         Optional<Node> bestBaseHost = candidateBaseHosts
                 .stream()
-                .min(Comparator.comparingInt(Node::getFreeCPU));
+                .min(Comparator.comparingInt(optFunc));
         AddVirtualNodeToBaseHost(bestBaseHost.orElse(new Node()).hostname, virtualNode);
     }
 
@@ -61,12 +70,6 @@ public class NodeRepo {
                 baseHost.addVirtualNode(virtualNode);
                 break;
             }
-        }
-    }
-
-    private void AssignNodesToBaseHosts() throws OutOfCapacityException {
-        for (Node node: virtualNodes) {
-            AssignVirtualNodeToBaseHost(node);
         }
     }
 
@@ -80,7 +83,7 @@ public class NodeRepo {
     private Capacity getTotalFreeCapacity() {
         return baseHosts
                 .stream()
-                .map(n -> n.getFreeCapacity())
+                .map(Node::getFreeCapacity)
                 .reduce(new Capacity(), (c1, c2) -> {
                     c1.add(c2);
                     return c1;
@@ -90,8 +93,8 @@ public class NodeRepo {
     private Capacity getTotalFreeUsableCapacity() {
         return baseHosts
                 .stream()
-                .map(node -> node.getFreeCapacity())
-                .filter(capacity -> { return capacity.isUsable(); })
+                .map(Node::getFreeCapacity)
+                .filter(Capacity::isUsable)
                 .reduce(new Capacity(), (c1, c2) -> {
                     c1.add(c2);
                     return c1;
@@ -113,15 +116,10 @@ public class NodeRepo {
         }
     }
 
-    public static void main(String[] args) {
-        String inputRepo = "nodes.json";
-        for (String arg : args) {
-            inputRepo =  arg;
-        }
-
-        NodeRepo repo = new NodeRepo(inputRepo);
+    private static void distributeVirtualNodes(String inputFile, ToIntFunction<Node> optFunc) {
+        NodeRepo repo = new NodeRepo(inputFile);
         try {
-            repo.AssignNodesToBaseHosts();
+            repo.AssignNodesToBaseHosts(optFunc);
             System.out.println("Free base hosts: " + repo.freeBaseHosts().size());
             System.out.println("Total free capacity: " + repo.getTotalFreeCapacity().toFlavor());
             System.out.println("Total free usable capacity: " + repo.getTotalFreeUsableCapacity().toFlavor());
@@ -130,6 +128,23 @@ public class NodeRepo {
             System.out.println(repo.toJson());
             e.printStackTrace();
             System.exit(1);
+        }
+    }
+
+    public static void main(String[] args) {
+        String inputRepo = "nodes.json";
+        for (String arg : args) {
+            inputRepo =  arg;
+        }
+
+        List<ToIntFunction<Node>> optFunctions = Arrays.asList(
+                Node::getFreeCPU,    // 1
+                Node::getFreeMemory  // 2
+        );
+        int iteration = 0;
+        for (ToIntFunction<Node> fn : optFunctions) {
+            System.out.println("\nIteration: " + iteration++);
+            distributeVirtualNodes(inputRepo, fn);
         }
     }
 }

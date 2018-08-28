@@ -12,11 +12,9 @@ public class Node {
     String type;
     List<Node> virtualNodes;
 
-    Node() {
+    Node() {}
 
-    }
-
-    Node(JsonNode node){
+    Node(JsonNode node) {
         virtualNodes = new ArrayList<>();
         this.parentHostname = "";
         if (!node.path("parentHostname").isMissingNode()){
@@ -28,7 +26,7 @@ public class Node {
         this.type = node.get("type").asText();
     }
 
-    public Map<String, Object> toMap(){
+    public Map<String, Object> toMap() {
         Map<String,Object> fields = new HashMap<>();
         fields.put("hostname", hostname);
         fields.put("freeCapacity", getFreeCapacity().toFlavor());
@@ -36,15 +34,15 @@ public class Node {
         return fields;
     }
 
-    boolean isBaseHost(){
+    boolean isBaseHost() {
         return "host".equals(type);
     }
 
-    boolean isVirtualNode(){
+    boolean isVirtualNode() {
         return "DOCKER_CONTAINER".equals(environment);
     }
 
-    Capacity getUsedCapacity(){
+    Capacity getUsedCapacity() {
         Capacity usedCapacity = new Capacity();
         for (Node virtualnode : virtualNodes) {
             usedCapacity.add(virtualnode.getMaxCapacity());
@@ -52,11 +50,11 @@ public class Node {
         return usedCapacity;
     }
 
-    Capacity getMaxCapacity(){
+    Capacity getMaxCapacity() {
         return new Capacity(this.flavor);
     }
 
-    Capacity getFreeCapacity(){
+    Capacity getFreeCapacity() {
         return new Capacity(
                 getMaxCapacity().cpu - getUsedCapacity().cpu,
                 getMaxCapacity().memory - getUsedCapacity().memory,
@@ -67,17 +65,19 @@ public class Node {
         return virtualNodes.isEmpty();
     }
 
-    int getFreeCPU(){
+    int getFreeCPU() {
         return getFreeCapacity().cpu;
     }
-    int getFreeMemory(){
+
+    int getFreeMemory() {
         return getFreeCapacity().memory;
     }
-    int getFreeDisksize(){
+
+    int getFreeDisksize() {
         return getFreeCapacity().disksize;
     }
 
-    void addVirtualNode(Node node){
+    void addVirtualNode(Node node) {
         virtualNodes.add(node);
     }
 
