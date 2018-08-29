@@ -83,7 +83,7 @@ public class Node {
     }
 
     public boolean hasChildren() {
-        return virtualNodes.isEmpty();
+        return ! virtualNodes.isEmpty();
     }
 
     int getFreeCPU() {

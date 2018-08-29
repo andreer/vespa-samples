@@ -8,8 +8,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.IntSupplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
@@ -23,8 +21,8 @@ public class NodeRepo {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode noderepo = mapper.readTree(reader);
-            Iterator<JsonNode> jsonNodes = noderepo.path("nodes").iterator();
+            JsonNode nodeRepo = mapper.readTree(reader);
+            Iterator<JsonNode> jsonNodes = nodeRepo.path("nodes").iterator();
             while (jsonNodes.hasNext()) {
                 Node node = new Node(jsonNodes.next());
                 if (!node.isActive()) {
@@ -43,35 +41,20 @@ public class NodeRepo {
         }
     }
 
-    private void AssignNodesToBaseHosts(ToIntFunction<Node> optFunc) throws OutOfCapacityException {
-        for (Node node: virtualNodes) {
-            AssignVirtualNodeToBaseHost(node, optFunc);
-        }
-    }
-
-    private void AssignVirtualNodeToBaseHost(Node virtualNode, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
-        List<Node> candidateBaseHosts = new ArrayList<Node>();
-        for (Node baseHost : baseHosts){
-            if (!baseHost.getFreeCapacity().canFit(virtualNode.getMaxCapacity())){
-                continue;
-            }
-            if (baseHost.hasAppInstance(virtualNode.appInstance)) {
-                continue;
-            }
-            candidateBaseHosts.add(baseHost);
-        }
-        //System.out.println(candidateBaseHosts.size() + " candidates for " + node.hostname.substring(0, node.hostname.indexOf(".")));
-        if (candidateBaseHosts.size() == 0) {
+    private void assignVirtualNodeToBaseHost(Node virtualNode, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
+        Optional<Node> bestBaseHost = baseHosts
+                .stream()
+                .filter(b -> { return   b.getFreeCapacity().canFit(virtualNode.getMaxCapacity()); })
+                .filter(b -> { return ! b.hasAppInstance(virtualNode.appInstance); })
+                .min(Comparator.comparingInt(optFunc));
+        if (bestBaseHost.isPresent()) {
+            addVirtualNodeToBaseHost(bestBaseHost.get().hostname, virtualNode);
+        } else {
             throw new OutOfCapacityException("No space for " + virtualNode.hostname + " " + virtualNode.getMaxCapacity().toFlavor());
         }
-
-        Optional<Node> bestBaseHost = candidateBaseHosts
-                .stream()
-                .min(Comparator.comparingInt(optFunc));
-        AddVirtualNodeToBaseHost(bestBaseHost.orElse(new Node()).hostname, virtualNode);
     }
 
-    public void AddVirtualNodeToBaseHost(String baseHostName, Node virtualNode) {
+    public void addVirtualNodeToBaseHost(String baseHostName, Node virtualNode) {
         for (Node baseHost : baseHosts) {
             if (baseHost.hostname.equals(baseHostName)) {
                 baseHost.addVirtualNode(virtualNode);
@@ -83,7 +66,7 @@ public class NodeRepo {
     private List<Node> freeBaseHosts() {
         return baseHosts
                 .stream()
-                .filter(Node::hasChildren)
+                .filter(node -> ! node.hasChildren())
                 .collect(Collectors.toList());
     }
 
@@ -135,14 +118,17 @@ public class NodeRepo {
 
     private static void distributeVirtualNodes(String repoFile, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
         NodeRepo repo = new NodeRepo(repoFile);
-        repo.AssignNodesToBaseHosts(optFunc);
+        for (Node node: repo.virtualNodes) {
+            repo.assignVirtualNodeToBaseHost(node, optFunc);
+        }
         System.out.println("Free base hosts: " + repo.freeBaseHosts().size());
         System.out.println("Total used capacity: " + repo.getTotalUsedCapacity().toFlavor()
-                + ", normalised: " + repo.getTotalUsedCapacity().normalized().toFlavor());
+                + ",\t\tnormalised: " + repo.getTotalUsedCapacity().normalized().toFlavor());
         System.out.println("Total free capacity: " + repo.getTotalFreeCapacity().toFlavor()
-                + ", normalised: " + repo.getTotalFreeCapacity().normalized().toFlavor());
+                + ",\t\tnormalised: " + repo.getTotalFreeCapacity().normalized().toFlavor());
         System.out.println("Total free usable capacity: " + repo.getTotalFreeUsableCapacity().toFlavor()
-                + ", normalised: " + repo.getTotalFreeUsableCapacity().normalized().toFlavor());
+                + ",\tnormalised: " + repo.getTotalFreeUsableCapacity().normalized().toFlavor());
+        System.out.println("Average flavor: " + repo.getTotalUsedCapacity().dividedBy(repo.virtualNodes.size()).toFlavor());
         //System.out.println(repo.toJson());
     }
 

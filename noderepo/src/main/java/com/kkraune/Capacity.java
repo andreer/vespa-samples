@@ -64,6 +64,10 @@ public class Capacity {
         return new Capacity(1, memory/cpu, disksize/cpu);
     }
 
+    Capacity dividedBy(int denominator) {
+        return new Capacity(cpu/denominator, memory/denominator, disksize/denominator);
+    }
+
     String toFlavor(){
         return "d-" + cpu + "-" + memory + "-" + disksize;
     }
