@@ -27,6 +27,9 @@ public class NodeRepo {
             Iterator<JsonNode> jsonNodes = noderepo.path("nodes").iterator();
             while (jsonNodes.hasNext()) {
                 Node node = new Node(jsonNodes.next());
+                if (!node.isActive()) {
+                    continue;
+                }
                 if (node.isBaseHost()){
                     baseHosts.add(node);
                 }
@@ -49,9 +52,13 @@ public class NodeRepo {
     private void AssignVirtualNodeToBaseHost(Node virtualNode, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
         List<Node> candidateBaseHosts = new ArrayList<Node>();
         for (Node baseHost : baseHosts){
-            if (baseHost.getFreeCapacity().canFit(virtualNode.getMaxCapacity())){
-                candidateBaseHosts.add(baseHost);
+            if (!baseHost.getFreeCapacity().canFit(virtualNode.getMaxCapacity())){
+                continue;
             }
+            if (baseHost.hasAppInstance(virtualNode.appInstance)) {
+                continue;
+            }
+            candidateBaseHosts.add(baseHost);
         }
         //System.out.println(candidateBaseHosts.size() + " candidates for " + node.hostname.substring(0, node.hostname.indexOf(".")));
         if (candidateBaseHosts.size() == 0) {
@@ -78,6 +85,16 @@ public class NodeRepo {
                 .stream()
                 .filter(Node::hasChildren)
                 .collect(Collectors.toList());
+    }
+
+    private Capacity getTotalUsedCapacity() {
+        return baseHosts
+                .stream()
+                .map(Node::getUsedCapacity)
+                .reduce(new Capacity(), (c1, c2) -> {
+                    c1.add(c2);
+                    return c1;
+                });
     }
 
     private Capacity getTotalFreeCapacity() {
@@ -116,35 +133,42 @@ public class NodeRepo {
         }
     }
 
-    private static void distributeVirtualNodes(String inputFile, ToIntFunction<Node> optFunc) {
-        NodeRepo repo = new NodeRepo(inputFile);
-        try {
-            repo.AssignNodesToBaseHosts(optFunc);
-            System.out.println("Free base hosts: " + repo.freeBaseHosts().size());
-            System.out.println("Total free capacity: " + repo.getTotalFreeCapacity().toFlavor());
-            System.out.println("Total free usable capacity: " + repo.getTotalFreeUsableCapacity().toFlavor());
-            //System.out.println(repo.toJson());
-        } catch (OutOfCapacityException e) {
-            System.out.println(repo.toJson());
-            e.printStackTrace();
-            System.exit(1);
-        }
+    private static void distributeVirtualNodes(String repoFile, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
+        NodeRepo repo = new NodeRepo(repoFile);
+        repo.AssignNodesToBaseHosts(optFunc);
+        System.out.println("Free base hosts: " + repo.freeBaseHosts().size());
+        System.out.println("Total used capacity: " + repo.getTotalUsedCapacity().toFlavor()
+                + ", normalised: " + repo.getTotalUsedCapacity().normalized().toFlavor());
+        System.out.println("Total free capacity: " + repo.getTotalFreeCapacity().toFlavor()
+                + ", normalised: " + repo.getTotalFreeCapacity().normalized().toFlavor());
+        System.out.println("Total free usable capacity: " + repo.getTotalFreeUsableCapacity().toFlavor()
+                + ", normalised: " + repo.getTotalFreeUsableCapacity().normalized().toFlavor());
+        //System.out.println(repo.toJson());
     }
 
     public static void main(String[] args) {
-        String inputRepo = "nodes.json";
-        for (String arg : args) {
-            inputRepo =  arg;
+        if (args.length == 0) {
+            System.out.println("Minimum one repo file, please ...");
+            System.exit(1);
         }
 
         List<ToIntFunction<Node>> optFunctions = Arrays.asList(
                 Node::getFreeCPU,    // 1
                 Node::getFreeMemory  // 2
         );
-        int iteration = 0;
-        for (ToIntFunction<Node> fn : optFunctions) {
-            System.out.println("\nIteration: " + iteration++);
-            distributeVirtualNodes(inputRepo, fn);
+
+        for (String repofile : args) {
+            System.out.println("\n\nEvaluating " + repofile);
+            int iteration = 0;
+            for (ToIntFunction<Node> fn : optFunctions) {
+                System.out.println("\nIteration: " + iteration++);
+                try {
+                    distributeVirtualNodes(repofile, fn);
+                }
+                catch (OutOfCapacityException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
         }
     }
 }

@@ -10,6 +10,8 @@ public class Node {
     String environment;
     String hostname;
     String type;
+    String appInstance;
+    String state;
     List<Node> virtualNodes;
 
     Node() {}
@@ -24,6 +26,12 @@ public class Node {
         this.hostname = node.get("hostname").asText();
         this.environment = node.get("environment").asText();
         this.type = node.get("type").asText();
+        this.state = node.get("state").asText();
+
+        if (!node.path("owner").isMissingNode()) {
+            appInstance = node.get("owner").get("tenant").asText() + "/"
+                        + node.get("owner").get("application").asText();
+        }
     }
 
     public Map<String, Object> toMap() {
@@ -40,6 +48,19 @@ public class Node {
 
     boolean isVirtualNode() {
         return "DOCKER_CONTAINER".equals(environment);
+    }
+
+    boolean isActive() {
+        return "active".equals(state);
+    }
+
+    boolean hasAppInstance(String appInstance) {
+        for (Node virtualnode : virtualNodes) {
+            if (virtualnode.appInstance.equals(appInstance)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     Capacity getUsedCapacity() {

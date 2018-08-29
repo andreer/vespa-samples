@@ -19,13 +19,18 @@ public class Capacity {
 
     void setCapacityFromString(String flavor) {
         switch (flavor){
-            case "C-2B/24/500":    cpu = 24; memory = 24;  disksize = 500;  break;
-            case "C-2E/64/480":    cpu = 48; memory = 64;  disksize = 480;  break;
-            case "C-2E/64/960":    cpu = 48; memory = 64;  disksize = 960;  break;
-            case "C-77E/256/960":  cpu = 48; memory = 256; disksize = 1920; break;
-            case "C-2I/64/1200":   cpu = 64; memory = 64;  disksize = 1200; break;
-            case "C-78I/64/1920":  cpu = 64; memory = 64;  disksize = 7680; break;
-            case "C-77I/256/1920": cpu = 64; memory = 256; disksize = 3840; break;
+            case "C-2B/24/500":      cpu = 24; memory = 24;  disksize = 500;  break;
+            case "C-77C/256/800-10": cpu = 40; memory = 256; disksize = 1760; break;
+            case "C-77C/256/960-10": cpu = 40; memory = 256; disksize = 1920; break;
+            case "C-2E/64/480":      cpu = 48; memory = 64;  disksize = 480;  break;
+            case "C-2E/64/960":      cpu = 48; memory = 64;  disksize = 960;  break;
+            case "C-77E/128/960":    cpu = 48; memory = 128; disksize = 1920; break;
+            case "C-77E/256/960":    cpu = 48; memory = 256; disksize = 1920; break;
+            case "C-2I/64/1200":     cpu = 64; memory = 64;  disksize = 1200; break;
+            case "C-78I/64/1920":    cpu = 64; memory = 64;  disksize = 7680; break;
+            case "C-77I/256/1920":   cpu = 64; memory = 256; disksize = 3840; break;
+
+            //
             default:
                 throw new RuntimeException("Flavor " + flavor + " not found");
         }
@@ -53,6 +58,10 @@ public class Capacity {
         else {
             setCapacityFromString(flavor);
         }
+    }
+
+    Capacity normalized() {
+        return new Capacity(1, memory/cpu, disksize/cpu);
     }
 
     String toFlavor(){
