@@ -11,7 +11,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class NodeRepo {
@@ -56,12 +55,17 @@ public class NodeRepo {
         }
     }
 
-    private void assignVirtualNodeToBaseHost(Node virtualNode, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
+    private void assignVirtualNodeToBaseHost(Node virtualNode) throws OutOfCapacityException {
         Optional<Node> bestBaseHost = baseHosts
                 .stream()
                 .filter(b -> { return   b.getFreeCapacity().canFit(virtualNode.getMaxCapacity()); })
                 .filter(b -> { return ! b.hasAppInstance(virtualNode.appInstance); })
-                .min(Comparator.comparingInt(optFunc));
+                .reduce((n1, n2) -> n1.getFreeCPU() < n2.getFreeCPU() ? n1 : n2);
+                //.reduce((n1, n2) -> n1.getFreeMemory() < n2.getFreeMemory() ? n1 : n2);
+                //.reduce((n1, n2) -> n1.getFreeDisksize() < n2.getFreeDisksize() ? n1 : n2);
+                //.reduce((n1, n2) -> n1.wastedCPU(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
+                //.reduce((n1, n2) -> n1.wastedMemory(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
+                //.reduce((n1, n2) -> n1.wastedDisksize(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
         if (bestBaseHost.isPresent()) {
             addVirtualNodeToBaseHost(bestBaseHost.get().hostname, virtualNode);
         } else {
@@ -126,35 +130,19 @@ public class NodeRepo {
                 });
     }
 
-    private String toJson() {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> nodes = new HashMap<>();
-        ArrayList<Map> jsonBaseHosts = new ArrayList<>();
-        for (Node basehost : baseHosts){
-            jsonBaseHosts.add(basehost.toMap());
-        }
-        nodes.put("nodes", jsonBaseHosts);
-        try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodes);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    private static void distributeVirtualNodes(String repoFile, ToIntFunction<Node> optFunc) throws OutOfCapacityException {
+    private static int distributeVirtualNodes(String repoFile) throws OutOfCapacityException {
         NodeRepo repo = new NodeRepo(repoFile);
         //repo.printFlavorDistribution();
         for (Iterator<Node> iterator = repo.virtualNodes.iterator(); iterator.hasNext();) { // assign the "too-large" flavors first
             Node node = iterator.next();
             if ("d-32-24-2400".equals(node.flavor) || "d-64-64-7680".equals(node.flavor)) {
-                repo.assignVirtualNodeToBaseHost(node, optFunc);
+                repo.assignVirtualNodeToBaseHost(node);
                 iterator.remove();
             }
         }
         for (Node node : repo.virtualNodes) {
-            repo.assignVirtualNodeToBaseHost(node, optFunc);
+            repo.assignVirtualNodeToBaseHost(node);
         }
-        System.out.println("Free base hosts: " + repo.freeBaseHosts().size());
         System.out.println("Repo capacity       : "
                 + String.format("%20s", repo.getRepoCapacity().toFlavorString())
                 + ", normalised: " + String.format("%10s", repo.getRepoCapacity().normalized().toFlavorString()));
@@ -171,6 +159,9 @@ public class NodeRepo {
                 + ", normalised: " + String.format("%10s", repo.getTotalFreeUsableCapacity().normalized().toFlavorString())
                 + ", of total: "   + repo.getTotalFreeUsableCapacity().fractionOf(repo.getRepoCapacity()).toFlavorString());
         System.out.println("Average flavor: " + repo.getTotalUsedCapacity().dividedBy(repo.virtualNodes.size()).toFlavorString());
+        int freeBaseHosts = repo.freeBaseHosts().size();
+        System.out.println("Free base hosts: " + freeBaseHosts);
+        return freeBaseHosts;
         //System.out.println(repo.toJson());
     }
 
@@ -180,23 +171,31 @@ public class NodeRepo {
             System.exit(1);
         }
 
-        List<ToIntFunction<Node>> optFunctions = Arrays.asList(
-                Node::getFreeCPU,    // 1
-                Node::getFreeMemory  // 2
-        );
 
         for (String repofile : args) {
-            System.out.println("\n\nEvaluating " + repofile);
-            int iteration = 0;
-            for (ToIntFunction<Node> fn : optFunctions) {
-                System.out.println("\nIteration: " + iteration++);
-                try {
-                    distributeVirtualNodes(repofile, fn);
-                }
-                catch (OutOfCapacityException e) {
-                    System.out.println(e.getMessage());
-                }
+            System.out.print("\n\n" + repofile + ": ");
+            try {
+                distributeVirtualNodes(repofile);
             }
+            catch (OutOfCapacityException e) {
+                System.out.println(e.getMessage());
+            }
+
+        }
+    }
+
+    private String toJson() {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> nodes = new HashMap<>();
+        ArrayList<Map> jsonBaseHosts = new ArrayList<>();
+        for (Node basehost : baseHosts){
+            jsonBaseHosts.add(basehost.toMap());
+        }
+        nodes.put("nodes", jsonBaseHosts);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodes);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 }

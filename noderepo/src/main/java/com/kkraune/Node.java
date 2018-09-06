@@ -98,6 +98,36 @@ public class Node {
         return getFreeCapacity().disksize;
     }
 
+    int wastedCPU(Node node) {
+        // by allocating this virtual node, if exhausting memory or disk,
+        // no more nodes can be allocated to this base host, rest-CPU is wasted
+        if (    (this.getFreeMemory()   - node.getMaxCapacity().memory) == 0 ||
+                (this.getFreeDisksize() - node.getMaxCapacity().disksize) == 0) {
+            return this.getFreeCPU() - node.getMaxCapacity().cpu;
+        }
+        return 0;
+    }
+
+    int wastedMemory(Node node) {
+        // by allocating this virtual node, if exhausting cpu or disk,
+        // no more nodes can be allocated to this base host, rest-memory is wasted
+        if (    (this.getFreeCPU()   - node.getMaxCapacity().cpu) == 0 ||
+                (this.getFreeDisksize() - node.getMaxCapacity().disksize) == 0) {
+            return this.getFreeMemory() - node.getMaxCapacity().memory;
+        }
+        return 0;
+    }
+
+    int wastedDisksize(Node node) {
+        // by allocating this virtual node, if exhausting cpu or memory,
+        // no more nodes can be allocated to this base host, rest-disk is wasted
+        if (    (this.getFreeCPU()   - node.getMaxCapacity().cpu) == 0 ||
+                (this.getFreeMemory() - node.getMaxCapacity().memory) == 0) {
+            return this.getFreeDisksize() - node.getMaxCapacity().disksize;
+        }
+        return 0;
+    }
+
     void addVirtualNode(Node node) {
         virtualNodes.add(node);
     }
