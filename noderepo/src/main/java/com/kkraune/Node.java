@@ -37,8 +37,8 @@ public class Node {
     public Map<String, Object> toMap() {
         Map<String,Object> fields = new HashMap<>();
         fields.put("hostname", hostname);
-        fields.put("freeCapacity", getFreeCapacity().toFlavor());
-        fields.put("usedCapacity", getUsedCapacity().toFlavor());
+        fields.put("freeCapacity", getFreeCapacity().toFlavorString());
+        fields.put("usedCapacity", getUsedCapacity().toFlavorString());
         return fields;
     }
 

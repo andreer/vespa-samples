@@ -7,8 +7,8 @@ public class Capacity {
 
     Capacity() {
         this.cpu      = 0;
-        this.disksize = 0;
         this.memory   = 0;
+        this.disksize = 0;
     }
 
     Capacity(int cpu, int memory, int disksize) {
@@ -29,8 +29,6 @@ public class Capacity {
             case "C-2I/64/1200":     cpu = 64; memory = 64;  disksize = 1200; break;
             case "C-78I/64/1920":    cpu = 64; memory = 64;  disksize = 7680; break;
             case "C-77I/256/1920":   cpu = 64; memory = 256; disksize = 3840; break;
-
-            //
             default:
                 throw new RuntimeException("Flavor " + flavor + " not found");
         }
@@ -68,7 +66,11 @@ public class Capacity {
         return new Capacity(cpu/denominator, memory/denominator, disksize/denominator);
     }
 
-    String toFlavor(){
+    CapacityFloat fractionOf(Capacity denominator) {
+        return new CapacityFloat((float)cpu/denominator.cpu, (float)memory/denominator.memory, (float)disksize/denominator.disksize);
+    }
+
+    String toFlavorString(){
         return "d-" + cpu + "-" + memory + "-" + disksize;
     }
 
