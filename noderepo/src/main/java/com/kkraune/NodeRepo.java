@@ -64,10 +64,10 @@ public class NodeRepo {
                 //.reduce((n1, n2) -> n1.getFreeCPU() < n2.getFreeCPU() ? n1 : n2);
                 //.reduce((n1, n2) -> n1.getFreeMemory() < n2.getFreeMemory() ? n1 : n2);
                 //.reduce((n1, n2) -> n1.getFreeDisksize() < n2.getFreeDisksize() ? n1 : n2);
-                //.reduce((n1, n2) -> n1.wastedCPU(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
+                .reduce((n1, n2) -> n1.wastedCPU(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
                 //.reduce((n1, n2) -> n1.wastedMemory(virtualNode) < n2.wastedMemory(virtualNode) ? n1 : n2);
                 //.reduce((n1, n2) -> n1.wastedDisksize(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
-                .reduce((n1, n2) -> rnd.nextDouble() > 0.5 ? n1 : n2);
+                //reduce((n1, n2) -> rnd.nextDouble() > 0.5 ? n1 : n2);
         if (bestBaseHost.isPresent()) {
             addVirtualNodeToBaseHost(bestBaseHost.get().hostname, virtualNode);
         } else {
@@ -169,15 +169,23 @@ public class NodeRepo {
             System.out.println("Minimum one repo file, please ...");
             System.exit(1);
         }
-        boolean verbose = false;
+        boolean verbose  = false;
+        boolean jsonOnly = false;
         int iterations = 1;
         for (String repofile : args) {
             if ("-v".equals(repofile)) {
                 verbose = true;
                 continue;
             }
+            if ("-jsonOnly".equals(repofile)) {
+                jsonOnly = true;
+                verbose  = false;
+                continue;
+            }
             int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE, sum = 0, freeHosts = 0;
-            System.out.println("\n\n" + repofile + ": ");
+            if (!jsonOnly) {
+                System.out.println("\n\n" + repofile + ": ");
+            }
             for (int i=0; i<iterations; i++) {
                 NodeRepo repo = new NodeRepo(repofile);
                 Collections.shuffle(repo.virtualNodes);
@@ -191,13 +199,17 @@ public class NodeRepo {
                 }
                 if (verbose) {
                     System.out.println("Iteration: " + i + ": Free base hosts: " + freeHosts + "\n");
+                }
+                if (jsonOnly) {
                     System.out.println(repo.toJson());
                 }
                 min =  freeHosts < min ? freeHosts : min;
                 max =  freeHosts > max ? freeHosts : max;
                 sum += freeHosts;
             }
-            System.out.println(String.format("Min: %d, max: %d, avg: %.2f", min, max, (float) sum / iterations));
+            if (!jsonOnly) {
+                System.out.println(String.format("Min: %d, max: %d, avg: %.2f", min, max, (float) sum / iterations));
+            }
         }
     }
 
