@@ -202,20 +202,16 @@ public class NodeRepo {
     }
 
     private String toJson() {
-        ObjectMapper mapper          = new ObjectMapper();
-        Map<String,Object> nodes     = new HashMap<>();
-        ArrayList<Map> baseHostsJSON = new ArrayList<>();
-        for (Node basehost : baseHosts){
-            baseHostsJSON.add(basehost.toMap());
-        }
-        ArrayList<Map> sortedJSON = baseHostsJSON.stream()
+        ObjectMapper mapper      = new ObjectMapper();
+        Map<String,Object> nodes = new HashMap<>();
+        ArrayList<Map> sorted = baseHosts
+                .stream()
+                .map(Node::toMap)
                 .sorted((m1, m2) -> {
-                    float f1 = (float) m1.get("utilization");
-                    float f2 = (float) m2.get("utilization");
-                    return (int)( (f2 - f1) * 1000);
+                    return (int)(((float)m2.get("utilization") - (float)m1.get("utilization")) * 1000);
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
-        nodes.put("nodes", sortedJSON);
+        nodes.put("nodes", sorted);
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodes);
         } catch (JsonProcessingException e) {
