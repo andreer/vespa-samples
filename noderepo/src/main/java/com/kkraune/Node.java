@@ -35,10 +35,14 @@ public class Node {
     }
 
     public Map<String, Object> toMap() {
+        CapacityFloat cap = new CapacityFloat(getUsedCapacity().fractionOf(getMaxCapacity()));
         Map<String,Object> fields = new HashMap<>();
         fields.put("hostname", hostname);
         fields.put("freeCapacity", getFreeCapacity().toFlavorString());
         fields.put("usedCapacity", getUsedCapacity().toFlavorString());
+        fields.put("maxCapacity", getMaxCapacity().toFlavorString());
+        fields.put("relativeUsedCapacity", cap.toFlavorString());
+        fields.put("utilization", cap.cpu/3 + cap.memory/3 + cap.disksize/3);
         return fields;
     }
 

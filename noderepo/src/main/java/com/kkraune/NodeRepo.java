@@ -21,9 +21,9 @@ public class NodeRepo {
         virtualNodes = new ArrayList<Node>();
         baseHosts    = new ArrayList<Node>();
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(filename));
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode nodeRepo = mapper.readTree(reader);
+            BufferedReader reader        = new BufferedReader(new FileReader(filename));
+            ObjectMapper mapper          = new ObjectMapper();
+            JsonNode nodeRepo            = mapper.readTree(reader);
             Iterator<JsonNode> jsonNodes = nodeRepo.path("nodes").iterator();
             while (jsonNodes.hasNext()) {
                 Node node = new Node(jsonNodes.next());
@@ -132,10 +132,7 @@ public class NodeRepo {
                 });
     }
 
-    private static int distributeVirtualNodes(String repoFile, boolean verbose) throws OutOfCapacityException {
-        NodeRepo repo = new NodeRepo(repoFile);
-        Collections.shuffle(repo.virtualNodes);
-        //repo.printFlavorDistribution();
+    private static int distributeVirtualNodes(NodeRepo repo, boolean verbose) throws OutOfCapacityException {
         for (Iterator<Node> iterator = repo.virtualNodes.iterator(); iterator.hasNext();) { // assign the "too-large" flavors first
             Node node = iterator.next();
             if ("d-32-24-2400".equals(node.flavor) || "d-64-64-7680".equals(node.flavor)) {
@@ -165,7 +162,6 @@ public class NodeRepo {
             System.out.println("Average flavor: " + repo.getTotalUsedCapacity().dividedBy(repo.virtualNodes.size()).toFlavorString());
         }
         return repo.freeBaseHosts().size();
-        //System.out.println(repo.toJson());
     }
 
     public static void main(String[] args) {
@@ -174,8 +170,7 @@ public class NodeRepo {
             System.exit(1);
         }
         boolean verbose = false;
-
-        int iterations = 10;
+        int iterations = 1;
         for (String repofile : args) {
             if ("-v".equals(repofile)) {
                 verbose = true;
@@ -184,8 +179,11 @@ public class NodeRepo {
             int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE, sum = 0, freeHosts = 0;
             System.out.println("\n\n" + repofile + ": ");
             for (int i=0; i<iterations; i++) {
+                NodeRepo repo = new NodeRepo(repofile);
+                Collections.shuffle(repo.virtualNodes);
+                //repo.printFlavorDistribution();
                 try {
-                    freeHosts = distributeVirtualNodes(repofile, verbose);
+                    freeHosts = distributeVirtualNodes(repo, verbose);
                 }
                 catch (OutOfCapacityException e) {
                     System.out.println(e.getMessage());
@@ -193,6 +191,7 @@ public class NodeRepo {
                 }
                 if (verbose) {
                     System.out.println("Iteration: " + i + ": Free base hosts: " + freeHosts + "\n");
+                    System.out.println(repo.toJson());
                 }
                 min =  freeHosts < min ? freeHosts : min;
                 max =  freeHosts > max ? freeHosts : max;
@@ -203,13 +202,20 @@ public class NodeRepo {
     }
 
     private String toJson() {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> nodes = new HashMap<>();
-        ArrayList<Map> jsonBaseHosts = new ArrayList<>();
+        ObjectMapper mapper          = new ObjectMapper();
+        Map<String,Object> nodes     = new HashMap<>();
+        ArrayList<Map> baseHostsJSON = new ArrayList<>();
         for (Node basehost : baseHosts){
-            jsonBaseHosts.add(basehost.toMap());
+            baseHostsJSON.add(basehost.toMap());
         }
-        nodes.put("nodes", jsonBaseHosts);
+        ArrayList<Map> sortedJSON = baseHostsJSON.stream()
+                .sorted((m1, m2) -> {
+                    float f1 = (float) m1.get("utilization");
+                    float f2 = (float) m2.get("utilization");
+                    return (int)( (f2 - f1) * 1000);
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
+        nodes.put("nodes", sortedJSON);
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodes);
         } catch (JsonProcessingException e) {

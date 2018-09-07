@@ -11,6 +11,12 @@ public class CapacityFloat {
         disksize = 0;
     }
 
+    CapacityFloat(CapacityFloat c) {
+        this.cpu      = c.cpu;
+        this.memory   = c.memory;
+        this.disksize = c.disksize;
+    }
+
     CapacityFloat(float cpu, float memory, float disksize) {
         this.cpu      = cpu;
         this.memory   = memory;
