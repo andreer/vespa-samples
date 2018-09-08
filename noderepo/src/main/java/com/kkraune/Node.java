@@ -8,6 +8,7 @@ public class Node {
     String flavor;
     Capacity capacity = null;
     Capacity usedCapacity = null;
+    Capacity freeCapacity = null;
     String parentHostname;
     String environment;
     String hostname;
@@ -15,6 +16,7 @@ public class Node {
     String appInstance;
     String state;
     List<Node> virtualNodes;
+    HashSet<String> appInstances = new HashSet<>();
 
     Node() {}
 
@@ -61,12 +63,7 @@ public class Node {
     }
 
     boolean hasAppInstance(String appInstance) {
-        for (Node virtualnode : virtualNodes) {
-            if (virtualnode.appInstance.equals(appInstance)) {
-                return true;
-            }
-        }
-        return false;
+        return appInstances.contains(appInstance);
     }
 
     Capacity getUsedCapacity() {
@@ -87,10 +84,12 @@ public class Node {
     }
 
     Capacity getFreeCapacity() {
-        return new Capacity(
-                getMaxCapacity().cpu - getUsedCapacity().cpu,
-                getMaxCapacity().memory - getUsedCapacity().memory,
-                getMaxCapacity().disksize - getUsedCapacity().disksize);
+        if (freeCapacity == null)
+            freeCapacity = new Capacity(
+                    getMaxCapacity().cpu - getUsedCapacity().cpu,
+                    getMaxCapacity().memory - getUsedCapacity().memory,
+                    getMaxCapacity().disksize - getUsedCapacity().disksize);
+        return freeCapacity;
     }
 
     public boolean hasChildren() {
@@ -142,6 +141,8 @@ public class Node {
     void addVirtualNode(Node node) {
         virtualNodes.add(node);
         usedCapacity = null;
+        freeCapacity = null;
+        appInstances.add(node.appInstance);
     }
 
     public Node(Node node) { // copy constructor
