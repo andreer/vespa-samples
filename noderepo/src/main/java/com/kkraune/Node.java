@@ -6,6 +6,8 @@ import java.util.*;
 
 public class Node {
     String flavor;
+    Capacity capacity = null;
+    Capacity usedCapacity = null;
     String parentHostname;
     String environment;
     String hostname;
@@ -68,15 +70,20 @@ public class Node {
     }
 
     Capacity getUsedCapacity() {
-        Capacity usedCapacity = new Capacity();
-        for (Node virtualnode : virtualNodes) {
-            usedCapacity.add(virtualnode.getMaxCapacity());
+        if (this.usedCapacity == null) {
+            Capacity usedCapacity = new Capacity();
+            for (Node virtualnode : virtualNodes) {
+                usedCapacity.add(virtualnode.getMaxCapacity());
+            }
+            this.usedCapacity = usedCapacity;
         }
         return usedCapacity;
     }
 
     Capacity getMaxCapacity() {
-        return new Capacity(this.flavor);
+        if(capacity == null)
+            capacity = new Capacity(this.flavor);
+        return capacity;
     }
 
     Capacity getFreeCapacity() {
@@ -134,6 +141,19 @@ public class Node {
 
     void addVirtualNode(Node node) {
         virtualNodes.add(node);
+        usedCapacity = null;
     }
 
+    public Node(Node node) { // copy constructor
+        this.flavor = node.flavor;
+        this.capacity = null;
+        this.usedCapacity = null;
+        this.parentHostname = node.parentHostname;
+        this.environment = node.environment;
+        this.hostname = node.hostname;
+        this.type = node.type;
+        this.appInstance = node.appInstance;
+        this.state = node.state;
+        this.virtualNodes = new ArrayList<>();
+    }
 }

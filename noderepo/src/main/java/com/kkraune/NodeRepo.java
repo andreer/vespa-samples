@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class NodeRepo {
     private List<Node> virtualNodes;
     private List<Node> baseHosts;
+    private static Random rnd = new Random(4321);
 
     private NodeRepo(String filename) {
         virtualNodes = new ArrayList<Node>();
@@ -56,7 +57,6 @@ public class NodeRepo {
     }
 
     private void assignVirtualNodeToBaseHost(Node virtualNode) throws OutOfCapacityException {
-        Random rnd = new Random();
         Optional<Node> bestBaseHost = baseHosts
                 .stream()
                 .filter(b -> { return   b.getFreeCapacity().canFit(virtualNode.getMaxCapacity()); })
@@ -67,7 +67,7 @@ public class NodeRepo {
                 .reduce((n1, n2) -> n1.wastedCPU(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
                 //.reduce((n1, n2) -> n1.wastedMemory(virtualNode) < n2.wastedMemory(virtualNode) ? n1 : n2);
                 //.reduce((n1, n2) -> n1.wastedDisksize(virtualNode) < n2.wastedCPU(virtualNode) ? n1 : n2);
-                //reduce((n1, n2) -> rnd.nextDouble() > 0.5 ? n1 : n2);
+                //.reduce((n1, n2) -> rnd.nextDouble() > 0.5 ? n1 : n2);
         if (bestBaseHost.isPresent()) {
             addVirtualNodeToBaseHost(bestBaseHost.get().hostname, virtualNode);
         } else {
@@ -186,12 +186,13 @@ public class NodeRepo {
             if (!jsonOnly) {
                 System.out.println("\n\n" + repofile + ": ");
             }
+            NodeRepo repo = new NodeRepo(repofile);
             for (int i=0; i<iterations; i++) {
-                NodeRepo repo = new NodeRepo(repofile);
-                Collections.shuffle(repo.virtualNodes);
-                //repo.printFlavorDistribution();
+                NodeRepo repoClone = new NodeRepo(repo);
+                Collections.shuffle(repoClone.virtualNodes, rnd);
+                //repoClone.printFlavorDistribution();
                 try {
-                    freeHosts = distributeVirtualNodes(repo, verbose);
+                    freeHosts = distributeVirtualNodes(repoClone, verbose);
                 }
                 catch (OutOfCapacityException e) {
                     System.out.println(e.getMessage());
@@ -229,5 +230,10 @@ public class NodeRepo {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    public NodeRepo(NodeRepo nodeRepo) { // copy constructor
+        this.virtualNodes = nodeRepo.virtualNodes.stream().map(Node::new).collect(Collectors.toList());
+        this.baseHosts = nodeRepo.baseHosts.stream().map(Node::new).collect(Collectors.toList());
     }
 }
